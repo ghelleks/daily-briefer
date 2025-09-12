@@ -1,0 +1,2 @@
+# This file keeps the tokens directory in git while ignoring its contents
+# All OAuth tokens and credential files should be placed in this directory

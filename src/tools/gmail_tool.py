@@ -32,7 +32,7 @@ class GmailTool(BaseTool):
     args_schema: type[BaseModel] = GmailToolInput
     
     # Class-level constant to avoid Pydantic validation issues
-    GMAIL_SCOPES: ClassVar[List[str]] = ['https://www.googleapis.com/auth/gmail.readonly']
+    GMAIL_SCOPES: ClassVar[List[str]] = ['https://www.googleapis.com/auth/gmail.modify']
     
     def __init__(self):
         super().__init__()
@@ -47,9 +47,11 @@ class GmailTool(BaseTool):
         """Authenticate with Gmail API."""
         try:
             creds = None
+            gmail_token_path = 'tokens/gmail_api_token.json'
+            
             # Token file stores the user's access and refresh tokens
-            if os.path.exists('tokens/token.json'):
-                creds = Credentials.from_authorized_user_file('tokens/token.json', self.GMAIL_SCOPES)
+            if os.path.exists(gmail_token_path):
+                creds = Credentials.from_authorized_user_file(gmail_token_path, self.GMAIL_SCOPES)
             
             # If there are no (valid) credentials available, let the user log in
             if not creds or not creds.valid:
@@ -61,7 +63,7 @@ class GmailTool(BaseTool):
                     creds = flow.run_local_server(port=0)
                 
                 # Save the credentials for the next run
-                with open('tokens/token.json', 'w') as token:
+                with open(gmail_token_path, 'w') as token:
                     token.write(creds.to_json())
             
             self._service = build('gmail', 'v1', credentials=creds)

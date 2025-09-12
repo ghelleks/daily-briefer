@@ -9,6 +9,7 @@ from .tasks.email_briefing import create_email_briefing_task
 from .tasks.calendar_analysis import create_calendar_analysis_task
 from .tasks.task_analysis import create_task_analysis_task
 from .tasks.document_assembly import create_document_assembly_task
+from .knowledge import create_email_classification_knowledge
 
 
 class DailyBrieferCrew:
@@ -43,6 +44,9 @@ class DailyBrieferCrew:
         task_analysis_task.context = [data_collection_task]
         document_assembly_task.context = [email_briefing_task, calendar_analysis_task, task_analysis_task]
         
+        # Create email classification knowledge source
+        email_classification_knowledge = create_email_classification_knowledge()
+        
         # Create the crew with sequential processing
         self.crew = Crew(
             agents=[
@@ -61,6 +65,7 @@ class DailyBrieferCrew:
                 task_analysis_task,
                 document_assembly_task
             ],
+            knowledge_sources=[email_classification_knowledge],  # Add email classification knowledge
             process=Process.sequential,  # Tasks run one after another
             verbose=True,
             memory=False  # Disable memory temporarily to avoid embedding issues

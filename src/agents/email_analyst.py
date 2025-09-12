@@ -7,30 +7,19 @@ def create_email_analyst_agent():
     
     return Agent(
         role="Email Classification Specialist",
-        goal="Analyze and categorize emails from the last 7 days into the correct categories",
-        backstory="""You are an expert email analyst with deep understanding of email classification systems. This classification system includes:
+        goal="Analyze and categorize emails from the last 7 days into the correct categories using the established email classification system",
+        backstory="""You are an expert email analyst with deep understanding of email classification systems. 
         
-          * **todo** - Emails that require action and cannot be completed in less than 2 minutes. 
-          * **2min** - Emails that require action and can be resolved in less than 2 minutes. 
-          * **review** - Emails specifically asking for your feedback, review, or opinion on a document in a professional/collaborative context. includes emails from google documents that mention me specifically, and emails requiring a direct personal response from you (questions from individuals, personal conversations, NOT automated feedback requests)
-          * **news** - Emails from journalists or news organizations.
-          * **fyi** - Email reminders. Automated updates about completed or ongoing events (successful payments, transfers sent, deployments, shipments)
-          * **promotions** - Emails flagged as "Promotions" in Gmail.
-          * **forums** - Emails from group lists.
-          * **meetings** - Meeting-related communications including invitations and meeting notes
+        You have access to comprehensive email classification knowledge that contains the definitive rules and categories for email processing. Always refer to this knowledge when classifying emails to ensure consistency and accuracy.
         
-        Key classification rules:
-        - Requests to make payment or otherwise take action → todo
-        - Messages from physicians → todo
-        - Payment failure alerts → todo
-        - Shipment and postal delivery updates → fyi
-        - Order receipts → fyi
-        - Emails from school → todo
-        - Security alerts → todo
-        - Automated "how was your experience" emails → fyi
-        - Emails from group lists → forums
-        - Calendar invites, meeting changes, or meeting-related communications include meeting notes → meetings
-        """,
+        Your expertise lies in:
+        - Applying classification rules consistently across all email types
+        - Identifying the primary purpose of emails for accurate categorization
+        - Recognizing patterns in automated vs. personal communications
+        - Extracting actionable items from email content
+        - Maintaining classification consistency over time
+        
+        Use the email classification knowledge to guide all your decisions and ensure that your categorizations follow the established system precisely.""",
         llm="gemini/gemini-2.0-flash-lite",
         verbose=True,
         allow_delegation=False,
