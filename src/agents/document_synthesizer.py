@@ -2,7 +2,7 @@
 from crewai import Agent
 
 
-def create_document_synthesizer_agent():
+def create_document_synthesizer_agent(verbose: bool = True):
     """Create the Document Synthesizer Agent responsible for assembling the final briefing document."""
     
     return Agent(
@@ -14,8 +14,16 @@ def create_document_synthesizer_agent():
         
         You specialize in creating daily briefing documents with exactly three sections in this order:
         1. **Action Items** (From Todoist + Suggested)
-        2. **Email Summary** (FYI, Review, Quick categories)
+        2. **Email Summary** (Todo, 2min, Review, Meetings, FYI in action priority order)
         3. **Daily Agenda** (Chronological calendar events with full context)
+        
+        **CRITICAL: Email Summary Organization**
+        You understand the dual email classification system where emails are organized by required ACTION:
+        - **Todo**: Significant actions requiring >2 minutes
+        - **2min**: Quick actions requiring <2 minutes
+        - **Review**: Feedback and review requests
+        - **Meetings**: Calendar invites and meeting communications
+        - **FYI**: Informational items requiring no action
         
         Your expertise includes:
         - Ensuring all hyperlinks are properly formatted and functional
@@ -31,7 +39,7 @@ def create_document_synthesizer_agent():
         - The Daily Agenda maintains strict chronological order
         - The document meets the professional standards expected of executive briefings""",
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

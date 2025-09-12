@@ -3,7 +3,7 @@ from crewai import Agent
 from ..tools.gmail_labeling_tool import GmailLabelingTool
 
 
-def create_email_labeling_agent():
+def create_email_labeling_agent(verbose: bool = True):
     """Create the Email Labeling Agent responsible for classifying and labeling Gmail emails."""
     
     return Agent(
@@ -25,7 +25,7 @@ def create_email_labeling_agent():
         Always refer to the email classification knowledge to ensure consistency with the established system.""",
         tools=[GmailLabelingTool()],
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

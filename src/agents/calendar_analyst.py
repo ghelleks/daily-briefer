@@ -3,7 +3,7 @@ from crewai import Agent
 from ..tools.workspace_tool import WorkspaceTool
 
 
-def create_calendar_analyst_agent():
+def create_calendar_analyst_agent(verbose: bool = True):
     """Create the Calendar Analyst Agent responsible for enriching calendar events with context."""
     
     return Agent(
@@ -27,7 +27,7 @@ def create_calendar_analyst_agent():
             WorkspaceTool()
         ],
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

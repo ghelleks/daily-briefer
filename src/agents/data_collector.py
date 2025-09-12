@@ -6,7 +6,7 @@ from ..tools.file_tool import FileTool
 from ..tools.todoist_tool import TodoistTool
 
 
-def create_data_collector_agent():
+def create_data_collector_agent(verbose: bool = True):
     """Create the Data Collector Agent responsible for gathering raw data from all sources."""
     
     # Combine all tools
@@ -31,7 +31,7 @@ def create_data_collector_agent():
         management information for the target date.""",
         tools=all_tools,
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

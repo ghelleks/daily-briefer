@@ -103,6 +103,10 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     
+    # Configure CrewAI telemetry based on quiet mode
+    if args.quiet:
+        os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
+    
     # Load environment variables
     load_dotenv()
     
@@ -133,7 +137,8 @@ def main():
         
         crew = create_email_labeling_crew(
             days_back=args.days,
-            max_emails=args.max_emails
+            max_emails=args.max_emails,
+            verbose=not args.quiet
         )
         
         if args.verbose and not args.quiet:
@@ -153,7 +158,8 @@ def main():
         # Prepare inputs
         inputs = {
             'dry_run': args.dry_run,
-            'verbose': args.verbose
+            'verbose': args.verbose,
+            'quiet': args.quiet
         }
         
         result = crew.kickoff(inputs=inputs)

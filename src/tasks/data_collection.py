@@ -5,7 +5,7 @@ from typing import Dict, Any
 from ..agents.data_collector import create_data_collector_agent
 
 
-def create_data_collection_task(target_date: date) -> Task:
+def create_data_collection_task(target_date: date, verbose: bool = True) -> Task:
     """Create a task for collecting all data sources needed for the daily briefing."""
     
     return Task(
@@ -44,6 +44,6 @@ def create_data_collection_task(target_date: date) -> Task:
         - Tool status reports (list of ToolStatus objects)
         - Any error messages or warnings about failed data collection""",
         
-        agent=create_data_collector_agent(),
+        agent=create_data_collector_agent(verbose=verbose),
         expected_output="Structured data collection report with emails, calendar events, tasks, and tool status information"
     )

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from crewai import Crew, Process
 from typing import Dict, Any
@@ -9,16 +10,18 @@ from ..knowledge import create_email_classification_knowledge
 class EmailLabelingCrew:
     """Email labeling crew for automated Gmail email classification and labeling."""
     
-    def __init__(self, days_back: int = 7, max_emails: int = 50):
+    def __init__(self, days_back: int = 7, max_emails: int = 50, verbose: bool = True):
         """
         Initialize the Email Labeling Crew.
         
         Args:
             days_back: Number of days to look back for emails
             max_emails: Maximum number of emails to process in one run
+            verbose: Whether to enable verbose output from CrewAI
         """
         self.days_back = days_back
         self.max_emails = max_emails
+        self.verbose = verbose
         self.crew = None
         self._setup_crew()
     
@@ -28,7 +31,8 @@ class EmailLabelingCrew:
         # Create email labeling task
         email_labeling_task = create_email_labeling_task(
             days_back=self.days_back, 
-            max_emails=self.max_emails
+            max_emails=self.max_emails,
+            verbose=self.verbose
         )
         
         # Create email classification knowledge source
@@ -39,8 +43,16 @@ class EmailLabelingCrew:
             agents=[email_labeling_task.agent],
             tasks=[email_labeling_task],
             knowledge_sources=[email_classification_knowledge],  # Use same knowledge as daily briefing
+            embedder={  # Use Google embeddings to match your Gemini setup
+                "provider": "google",
+                "config": {
+                    "model": "models/text-embedding-004",
+                    "api_key": os.environ.get("GOOGLE_API_KEY")
+                }
+            },
             process=Process.sequential,
-            verbose=True,
+            verbose=self.verbose,
+            output_log_file=False if not self.verbose else None,  # Disable log output in quiet mode
             memory=False  # Disable memory for simpler processing
         )
     
@@ -102,15 +114,16 @@ class EmailLabelingCrew:
         }
 
 
-def create_email_labeling_crew(days_back: int = 7, max_emails: int = 50) -> EmailLabelingCrew:
+def create_email_labeling_crew(days_back: int = 7, max_emails: int = 50, verbose: bool = True) -> EmailLabelingCrew:
     """
     Factory function to create an Email Labeling Crew.
     
     Args:
         days_back: Number of days to look back for emails
         max_emails: Maximum number of emails to process in one run
+        verbose: Whether to enable verbose output from CrewAI
         
     Returns:
         Configured EmailLabelingCrew instance
     """
-    return EmailLabelingCrew(days_back=days_back, max_emails=max_emails)
+    return EmailLabelingCrew(days_back=days_back, max_emails=max_emails, verbose=verbose)

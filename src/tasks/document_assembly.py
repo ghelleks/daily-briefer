@@ -4,7 +4,7 @@ from datetime import date
 from ..agents.document_synthesizer import create_document_synthesizer_agent
 
 
-def create_document_assembly_task(target_date: date) -> Task:
+def create_document_assembly_task(target_date: date, verbose: bool = True) -> Task:
     """Create a task for assembling the final daily briefing document."""
     
     return Task(
@@ -20,9 +20,11 @@ def create_document_assembly_task(target_date: date) -> Task:
            - Use proper formatting and clear categorization
            
            **Section 2: Email Summary**
+           - **Todo**: Emails requiring significant action (>2 minutes)
+           - **2min**: Emails requiring quick action (<2 minutes)
+           - **Review**: Emails requesting feedback or professional response
+           - **Meetings**: Calendar invites and meeting-related communications
            - **FYI**: Informational items requiring no action
-           - **Review**: Items requiring feedback, review, or response
-           - **Quick**: 2-minute tasks from the review category
            - **CRITICAL**: Include hyperlinks for all document and website mentions
            
            **Section 3: Daily Agenda**
@@ -61,6 +63,6 @@ def create_document_assembly_task(target_date: date) -> Task:
         
         **Expected Output**: Complete daily briefing document ready for executive consumption with all required sections, proper formatting, and comprehensive hyperlinks""",
         
-        agent=create_document_synthesizer_agent(),
+        agent=create_document_synthesizer_agent(verbose=verbose),
         expected_output="Professional daily briefing document with Action Items, Email Summary, and Daily Agenda sections"
     )

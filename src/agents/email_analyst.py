@@ -2,7 +2,7 @@
 from crewai import Agent
 
 
-def create_email_analyst_agent():
+def create_email_analyst_agent(verbose: bool = True):
     """Create the Email Analyst Agent responsible for email classification and summarization."""
     
     return Agent(
@@ -21,7 +21,7 @@ def create_email_analyst_agent():
         
         Use the email classification knowledge to guide all your decisions and ensure that your categorizations follow the established system precisely.""",
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

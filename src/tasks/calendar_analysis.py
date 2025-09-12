@@ -4,7 +4,7 @@ from datetime import date
 from ..agents.calendar_analyst import create_calendar_analyst_agent
 
 
-def create_calendar_analysis_task(target_date: date) -> Task:
+def create_calendar_analysis_task(target_date: date, verbose: bool = True) -> Task:
     """Create a task for analyzing calendar events and enriching them with context."""
     
     return Task(
@@ -52,6 +52,6 @@ def create_calendar_analysis_task(target_date: date) -> Task:
         - Open action items from linked documents
         - Meeting preparation insights""",
         
-        agent=create_calendar_analyst_agent(),
+        agent=create_calendar_analyst_agent(verbose=verbose),
         expected_output="Chronologically ordered calendar events with comprehensive context, related documents, and action items"
     )

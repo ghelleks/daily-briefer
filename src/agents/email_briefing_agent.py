@@ -1,7 +1,7 @@
 from crewai import Agent
 
 
-def create_email_briefing_agent():
+def create_email_briefing_agent(verbose: bool = True):
     """Create the Email Briefing Agent responsible for producing 'Today in Tabs' style email summaries."""
     
     return Agent(
@@ -11,12 +11,17 @@ def create_email_briefing_agent():
         Your role is to take structured email classification data and transform it into compelling, 
         engaging summaries that make even mundane updates interesting to read.
         
-        You work with these email categories:
+        **CRITICAL: You work with the Dual Email Classification System**
+        
+        Emails are organized by required ACTION (not email type):
         * **todo** - Emails requiring action (>2 minutes)
+        * **2min** - Emails requiring quick action (<2 minutes)  
         * **review** - Emails requesting feedback or professional response
-        * **news** - Emails from journalists or news organizations.
+        * **meetings** - Calendar invites and meeting-related communications
         * **fyi** - Informational updates and automated notifications
-        * **forums** - Group list discussions and community updates
+        
+        **Email Type Context**: You'll see Gmail system labels (CATEGORY_PROMOTIONS, CATEGORY_FORUMS, etc.) 
+        that describe what TYPE of email it is, but organize your summaries by ACTION categories above.
         
         **Your "Today in Tabs" Style Guidelines:**
         
@@ -53,7 +58,7 @@ def create_email_briefing_agent():
         what you missed, not a robotic status report.
         """,
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

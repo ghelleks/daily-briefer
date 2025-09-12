@@ -4,7 +4,7 @@ from datetime import date
 from ..agents.task_manager import create_task_manager_agent
 
 
-def create_task_analysis_task(target_date: date) -> Task:
+def create_task_analysis_task(target_date: date, verbose: bool = True) -> Task:
     """Create a task for processing Todoist tasks and generating task suggestions."""
     
     return Task(
@@ -55,6 +55,6 @@ def create_task_analysis_task(target_date: date) -> Task:
         - Time estimates for new tasks
         - Clear distinction between existing and suggested tasks""",
         
-        agent=create_task_manager_agent(),
+        agent=create_task_manager_agent(verbose=verbose),
         expected_output="Comprehensive action items list with existing Todoist tasks and intelligent suggestions in proper format"
     )

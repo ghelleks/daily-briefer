@@ -2,7 +2,7 @@
 from crewai import Agent
 
 
-def create_task_manager_agent():
+def create_task_manager_agent(verbose: bool = True):
     """Create the Task Manager Agent responsible for processing Todoist data and suggesting new tasks."""
     
     return Agent(
@@ -26,7 +26,7 @@ def create_task_manager_agent():
         Your goal is to ensure the user has a complete picture of both existing commitments 
         and newly identified action items for maximum productivity.""",
         llm="gemini/gemini-2.0-flash-lite",
-        verbose=True,
+        verbose=verbose,
         allow_delegation=False,
         max_iter=3
     )

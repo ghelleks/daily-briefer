@@ -2,10 +2,21 @@ from crewai import Task
 from datetime import date
 
 from ..agents.email_briefing_agent import create_email_briefing_agent
+from ..constants import get_action_priority_order, get_label_emoji, get_label_display_name
 
 
-def create_email_briefing_task(target_date: date) -> Task:
+def create_email_briefing_task(target_date: date, verbose: bool = True) -> Task:
     """Create a task for producing 'Today in Tabs' style email summaries for the daily briefing."""
+    
+    # Generate dynamic section headers using centralized constants
+    priority_order = get_action_priority_order()
+    sections = []
+    for label in priority_order:
+        emoji = get_label_emoji(label)
+        display_name = get_label_display_name(label)
+        sections.append(f"{emoji} **{display_name}**")
+    
+    sections_text = "\n        ".join([f"{i+1}. {section}" for i, section in enumerate(sections)])
     
     return Task(
         description=f"""Transform categorized email data into engaging email summaries for daily briefing on {target_date.isoformat()}.
@@ -13,35 +24,22 @@ def create_email_briefing_task(target_date: date) -> Task:
         Your task is to take the structured email classification data from the Email Analyst and create 
         compelling "Today in Tabs" style summaries for the **Email Summary** section of the daily briefing.
         
-        **Input**: Structured email classification data with categorized emails (todo, review, fyi, forums)
+        **CRITICAL: Use Dual Classification System**
         
-        **Output Sections to Generate:**
+        **Input**: Structured email classification data organized by ACTION categories (todo, 2min, review, meetings, fyi)
+        with Gmail system label context (CATEGORY_PROMOTIONS, CATEGORY_FORUMS, etc.)
         
-        1. **📋 Todo** - Emails requiring action (>2 minutes)
-           - Present each item as an engaging narrative
-           - **Bold** key deadlines, amounts, and action items
-           - Link to [original emails](gmail-url) and any mentioned documents/websites
-           - Add context about why these items matter
+        **Output Sections to Generate (ACTION Priority Order):**
         
-        2. **🔍 Review** - Emails requesting feedback or professional response  
-           - Transform requests into compelling summaries
-           - **Bold** important names, projects, and deadlines
-           - Link to [original emails](gmail-url) and documents needing review
-           - Explain the significance of each review request
+        {sections_text}
         
-        3. **💡 FYI** - Informational updates and automated notifications
-           - **This is your showcase section for "Today in Tabs" style**
-           - Make dry notifications feel interesting and connected
-           - **Bold** key terms, amounts, companies, and status updates
-           - Rich linking to [original emails](gmail-url) and related resources
-           - Add commentary and context that makes mundane updates engaging
-           - Connect related notifications into coherent themes
-        
-        4. **💬 Forums** - Group discussions and community updates
-           - Summarize interesting discussions and community activity
-           - **Bold** key topics, contributors, and discussion themes
-           - Link to [original emails](gmail-url) and relevant forum threads
-           - Highlight noteworthy conversations and developments
+        **Section Guidelines:**
+        - Present each item as an engaging narrative
+        - **Bold** key deadlines, amounts, and action items  
+        - Link to [original emails](gmail-url) and any mentioned documents/websites
+        - Add context about why these items matter
+        - Use email type context to add flavor when relevant
+        - For FYI section: Make dry notifications feel interesting and connected
         
         **Critical Requirements:**
         
@@ -66,11 +64,12 @@ def create_email_briefing_task(target_date: date) -> Task:
         - If a category has no emails, note it briefly and move on
         
         **Expected Output**: A complete "Email Summary" section formatted in markdown with:
-        - Four distinct subsections (Todo, Review, FYI, Forums)
+        - Five distinct subsections organized by ACTION priority (Todo, 2min, Review, Meetings, FYI)
         - Rich hyperlinks throughout all sections
         - Strategic **bold** formatting for key information
-        - Engaging "Today in Tabs" style writing that makes email updates compelling to read""",
+        - Engaging "Today in Tabs" style writing that makes email updates compelling to read
+        - Email type context woven in naturally when it adds flavor or clarity""",
         
-        agent=create_email_briefing_agent(),
+        agent=create_email_briefing_agent(verbose=verbose),
         expected_output="Complete Email Summary section with engaging 'Today in Tabs' style summaries, comprehensive hyperlinks, and strategic formatting"
     )
