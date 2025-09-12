@@ -25,7 +25,7 @@ The project uses a specific 5-label system for email processing:
 
 ## Key Components
 
-- `main.py` - Entry point (currently minimal)
+- `daily_briefer.py` - Entry point (currently minimal)
 - `docs/daily-briefer.md` - Complete specification for the Daily Briefing Agent persona and workflow
 - `docs/label-emails.md` - Email classification rules and instructions
 - `TODO.md` - Development roadmap and task breakdown
@@ -40,7 +40,7 @@ pip install -e .
 npm install -g @modelcontextprotocol/server-todoist
 
 # Run the main application
-python main.py
+python daily_briefer.py
 
 # The project uses Python 3.13+ (as specified in pyproject.toml)
 ```

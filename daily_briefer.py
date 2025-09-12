@@ -3,7 +3,7 @@ import sys
 from datetime import date, datetime
 from dotenv import load_dotenv
 
-from src.crew_config import create_daily_briefer_crew
+from src.crews import create_daily_briefer_crew
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
             target_date = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
         except ValueError:
             print("❌ Invalid date format. Please use YYYY-MM-DD")
-            print("   Example: python main.py 2024-01-15")
+            print("   Example: python daily_briefer.py 2024-01-15")
             return
     
     print(f"📅 Generating briefing for: {target_date.strftime('%A, %B %d, %Y')}")
@@ -67,14 +67,14 @@ def main():
 
 def print_usage():
     """Print usage information."""
-    print("Usage: python main.py [DATE]")
+    print("Usage: python daily_briefer.py [DATE]")
     print()
     print("Arguments:")
     print("  DATE    Target date in YYYY-MM-DD format (optional, defaults to today)")
     print()
     print("Examples:")
-    print("  python main.py                    # Generate briefing for today")
-    print("  python main.py 2024-01-15        # Generate briefing for January 15, 2024")
+    print("  python daily_briefer.py                    # Generate briefing for today")
+    print("  python daily_briefer.py 2024-01-15        # Generate briefing for January 15, 2024")
     print()
     print("Environment Setup:")
     print("  Create a .env file with your API credentials:")

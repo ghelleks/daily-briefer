@@ -74,7 +74,7 @@ Instead of dry bullet points, your email summaries are written in the engaging, 
 
 4. **Generate your first briefing:**
    ```bash
-   uv run python main.py
+   uv run python daily_briefer.py
    ```
 
 That's it! Your first briefing will be generated and displayed in your terminal.
@@ -196,13 +196,13 @@ This script walks you through the entire process with step-by-step instructions.
 
 ```bash
 # Generate today's briefing
-uv run python main.py
+uv run python daily_briefer.py
 
 # Generate a briefing for a specific date
-uv run python main.py 2024-01-15
+uv run python daily_briefer.py 2024-01-15
 
 # Show help and usage information
-uv run python main.py --help
+uv run python daily_briefer.py --help
 ```
 
 ### What Happens When You Run It

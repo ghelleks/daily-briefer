@@ -88,7 +88,7 @@ Follow these steps to set up OAuth 2.0 credentials for Gmail and Calendar access
 
 6. ✅ VERIFY SETUP
    → Make sure you have 'credentials.json' in your project root
-   → Run: uv run python main.py
+   → Run: uv run python daily_briefer.py
    → First run will open browser for OAuth consent
 
 📝 CREDENTIAL FILES EXPLAINED:
@@ -205,7 +205,7 @@ def main():
     print("1. Follow the instructions above to create OAuth credentials")
     print("2. Download and save as 'credentials.json'")
     print("3. Update GOOGLE_AI_API_KEY in .env file")
-    print("4. Run: uv run python main.py")
+    print("4. Run: uv run python daily_briefer.py")
     print()
     print("📁 Files in project:")
     for file in ["credentials.json", "credentials_template.json", "token.json", ".env"]:
