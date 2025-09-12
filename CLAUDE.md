@@ -88,3 +88,4 @@ The system is designed to integrate with:
 - Instapaper (for reading list management)
 - we use uv to manage this project and its dependencies
 - always use uv to run this tool
+- Always follow CrewAI best practices. When you identify patterns or behavior that deviate from those best practices, you seek guidance from the user.

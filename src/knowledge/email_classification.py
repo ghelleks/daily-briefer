@@ -1,4 +1,12 @@
 from crewai.knowledge.source.string_knowledge_source import StringKnowledgeSource
+from ..constants import (
+    ACTION_LABELS, 
+    GMAIL_SYSTEM_LABELS,
+    get_action_priority_order, 
+    get_label_description,
+    get_label_display_name,
+    get_label_emoji
+)
 
 
 def create_email_classification_knowledge() -> StringKnowledgeSource:
@@ -12,161 +20,164 @@ def create_email_classification_knowledge() -> StringKnowledgeSource:
         StringKnowledgeSource: The email classification knowledge source
     """
     
-    classification_content = """
-# Email Classification System
+    # Generate completely dynamic content from centralized constants
+    
+    # Action labels with full details
+    action_sections = []
+    for label in ACTION_LABELS:
+        emoji = get_label_emoji(label)
+        display_name = get_label_display_name(label)
+        description = get_label_description(label)
+        action_sections.append(f"### **{emoji} {label}**\n{description}")
+    
+    action_labels_detailed = "\n\n".join(action_sections)
+    
+    # Priority order for classification
+    priority_order = get_action_priority_order()
+    priority_list = "\n".join([f"{i+1}. **{label}** ({get_label_description(label)})" 
+                              for i, label in enumerate(priority_order)])
+    
+    # Gmail system labels list
+    gmail_labels_list = "\n".join([f"- **{label}**" for label in GMAIL_SYSTEM_LABELS[:5]])  # Show first 5
+    
+    classification_content = f"""
+# Dual Email Classification System
 
-This is the definitive email classification system for categorizing Gmail emails. Use these rules consistently across all email processing tasks.
+This system uses TWO ORTHOGONAL classification approaches for Gmail emails:
 
-## Classification Categories
+1. **Email Type Classification** (Gmail System Labels) - What the email IS
+2. **Action Classification** (Our Custom Labels) - What to DO with it
 
-### **todo** 
-Emails that require action and cannot be completed in less than 2 minutes.
+These work together: an email can have both a type (e.g., CATEGORY_UPDATES) AND an action (e.g., todo).
 
-**Examples:**
-- Emails about Lee Elementary school
-- Security alerts requiring immediate attention
-- Requests for payment or financial transactions
-- Requests to complete forms or applications
-- Messages from physicians requiring follow-up
-- School-related communications requiring action
+---
 
-### **2min** 
-Emails that require action but can be resolved in less than 2 minutes.
+## Email Type Classification (Gmail System Labels)
 
-**Examples:**
-- Simple confirmations or quick replies
-- Brief status updates requiring acknowledgment
-- Quick scheduling confirmations
-- Simple form completions
+Gmail automatically applies these system labels. **DO NOT create duplicate user labels** for these categories.
 
-### **fyi** 
-Informational emails and automated updates about completed or ongoing events.
+### **CATEGORY_PROMOTIONS**
+Marketing emails, deals, offers, sales announcements.
+- **Respect this label** - don't create "promotions" user label
+- **Action needed**: Usually "fyi" but can be "todo" if requiring response
 
-**Examples:**
-- Email reminders and notifications
-- Successful payment confirmations
-- Transfer sent notifications
-- Deployment status updates
-- Shipment and postal delivery updates
-- Order receipts and confirmations
-- Automated "how was your experience" emails
-- System status updates
+### **CATEGORY_UPDATES** 
+Notifications, confirmations, receipts, automated status updates.
+- **Examples**: Payment confirmations, shipping notifications, deployment alerts
+- **Action needed**: Usually "fyi" but can be "todo" if action required
 
-### **review** 
-Emails specifically asking for feedback, review, or opinion on documents in professional/collaborative contexts.
+### **CATEGORY_FORUMS**
+Mailing lists, discussion groups, community communications.
+- **Respect this label** - don't create "forums" user label  
+- **Action needed**: Usually "fyi" or "2min" for quick responses
 
-**Examples:**
-- Emails from Google Documents mentioning you specifically
-- Direct requests for document review or feedback
-- Professional collaboration requests
-- Personal questions from individuals requiring direct response
-- Personal conversations requiring thoughtful replies
-- NOT automated feedback requests or surveys
+### **CATEGORY_SOCIAL**
+Social media notifications and social network updates.
+- **Action needed**: Usually "fyi"
 
-### **news**
-Emails from journalists or news organizations.
+### **CATEGORY_PRIMARY**
+Important emails that don't fit other categories.
+- **Action needed**: Requires content analysis for todo/review/meetings/fyi
 
-**Examples:**
-- Newsletter subscriptions from news outlets
-- Press releases
-- Journalist inquiries
-- News alerts and updates
+---
 
-### **promotions**
-Emails flagged as "Promotions" in Gmail.
+## Action Classification (Our Custom Labels)
 
-**Examples:**
-- Marketing emails
-- Sales announcements
-- Promotional offers
-- Advertisement emails
+These labels indicate what ACTION should be taken with the email, regardless of its type.
 
-### **forums**
-Emails from group lists and community discussions.
+{action_labels_detailed}
 
-**Examples:**
-- Mailing list messages
-- Community forum notifications
-- Group discussion threads
-- Professional association communications
+**Examples by Email Type:**
+- CATEGORY_UPDATES + todo: Payment failure requiring action
+- CATEGORY_PRIMARY + todo: School communication requiring response
+- CATEGORY_FORUMS + 2min: Mailing list requiring quick confirmation
+- CATEGORY_PRIMARY + review: Google Docs sharing request
+- CATEGORY_PRIMARY + meetings: Calendar invites
+- CATEGORY_PROMOTIONS + fyi: Marketing emails (default)
 
-### **meetings**
-Meeting-related communications including invitations and meeting notes.
+---
 
-**Examples:**
-- Calendar invites
-- Meeting change notifications
-- Meeting notes and summaries
-- Conference call links and details
-- Meeting preparation materials
+## Dual Classification Rules
 
-## Key Classification Rules
+### **Step 1: Identify Email Type (Gmail System Labels)**
+- **Respect existing Gmail system labels** - never create duplicate user labels
+- Gmail labels tell us WHAT the email is (promotion, update, forum, etc.)
+- If no Gmail system label exists, focus only on action classification
 
-Apply these rules when categorizing emails:
+### **Step 2: Determine Required Action**
+Apply these rules to determine what ACTION is needed:
 
-1. **Payment requests or action items** → **todo**
-2. **Payment failure alerts** → **todo** 
-3. **Shipment and delivery updates** → **fyi**
-4. **Order receipts** → **fyi**
-5. **Automated experience surveys** → **fyi**
-6. **Direct document review requests** → **review**
-7. **Personal questions requiring response** → **review**
-8. **Calendar-related communications** → **meetings**
-9. **Group mailing lists** → **forums**
-10. **News organization emails** → **news**
-11. **Gmail promotion-flagged emails** → **promotions**
+1. **Payment requests, forms, school communications** → **todo**
+2. **Quick confirmations, simple replies** → **2min**
+3. **Document review requests, feedback requests** → **review**
+4. **Calendar invites, meeting logistics** → **meetings**
+5. **Informational content, no action needed** → **fyi**
 
-## Classification Priority
+### **Action Classification Priority**
+When an email could fit multiple action categories, use this priority order:
 
-When an email could fit multiple categories, use this priority order:
+{priority_list}
 
-1. **meetings** (calendar-related takes precedence)
-2. **todo** (action items take precedence over information)
-3. **2min** (subset of todo for quick actions)
-4. **review** (personal requests for feedback)
-5. **news** (from news organizations)
-6. **promotions** (marketing content)
-7. **forums** (group communications)
-8. **fyi** (informational, default for automated content)
+---
 
-## Gmail System Categories Integration
+## Gmail System Integration
 
-Gmail automatically applies system labels that should be leveraged in classification:
+### **How to Work with Gmail System Labels**
 
-### **Gmail System Labels**
-- `CATEGORY_PROMOTIONS` - Marketing emails, deals, offers → maps to **promotions**
-- `CATEGORY_FORUMS` - Mailing lists, discussion groups → maps to **forums**  
-- `CATEGORY_UPDATES` - Notifications, confirmations, receipts → maps to **fyi**
-- `CATEGORY_SOCIAL` - Social media notifications → maps to **fyi**
-- `CATEGORY_PRIMARY` - Important emails → requires content-based classification
-- `INBOX` - General inbox marker
-- `IMPORTANT` - Gmail importance marker
-- `STARRED` - User-starred emails
+#### **CATEGORY_PROMOTIONS**
+- **Don't create**: "promotions" user label
+- **Do apply**: Action labels (usually "fyi", sometimes "todo")
+- **Example**: Marketing email → Keep CATEGORY_PROMOTIONS + add "fyi"
 
-### **Gmail Category Priority Rules**
-1. **Use Gmail categories as primary signals** when they align with our system
-2. **CATEGORY_PROMOTIONS** → automatically classify as **promotions**
-3. **CATEGORY_FORUMS** → automatically classify as **forums**
-4. **CATEGORY_UPDATES** → default to **fyi** unless content indicates otherwise
-5. **CATEGORY_PRIMARY** → analyze content for todo/review/meetings/2min classification
-6. **No Gmail category** → use full content-based classification
+#### **CATEGORY_FORUMS** 
+- **Don't create**: "forums" user label
+- **Do apply**: Action labels (usually "fyi" or "2min", sometimes "todo")
+- **Example**: Mailing list → Keep CATEGORY_FORUMS + add "2min" if response needed
 
-### **Label Strategy**
-- **Don't duplicate** Gmail's promotional/forum categorization
-- **Focus custom labels** on actionability (todo, 2min, review, meetings)
-- **Complement Gmail** rather than replace system functionality
-- **Respect existing** Gmail categorization when it's accurate
+#### **CATEGORY_UPDATES**
+- **Don't create**: "updates" user label  
+- **Do apply**: Action labels (usually "fyi", sometimes "todo")
+- **Example**: Payment failure → Keep CATEGORY_UPDATES + add "todo"
+
+#### **CATEGORY_PRIMARY**
+- **No type label needed** (already primary)
+- **Do apply**: Action labels based on content analysis
+- **Example**: Personal email → add "review" if asking for feedback
+
+### **Label Application Strategy**
+- **Gmail system labels**: Respect and preserve (don't modify)
+- **Our action labels**: Apply exactly one per email
+- **Result**: Each email has type context + action directive
+
+---
 
 ## Classification Guidelines
 
-- **First check Gmail system labels** for automatic categorization hints
-- Read the email subject, sender, and content carefully
-- Consider the sender context (automated vs. personal)
-- Look for action words and urgency indicators
-- Classify based on primary purpose, not secondary content
-- When Gmail categories exist, use them as strong classification signals
-- When unsure, err toward the category requiring more attention (todo > review > fyi)
-- Maintain consistency across similar email types
+### **Two-Phase Classification Process**
+
+**Phase 1: Observe Email Type**
+- Check for existing Gmail system labels (CATEGORY_*)
+- Note email type context but don't create duplicate labels
+- Use type information to inform action classification
+
+**Phase 2: Classify Required Action**
+- Analyze email content for required actions
+- Apply exactly one action label: todo, 2min, review, meetings, fyi
+- Consider urgency and complexity when choosing between todo/2min
+
+### **Content Analysis Guidelines**
+- **Read subject, sender, and content** for action indicators
+- **Action words**: "please", "required", "due", "review" → likely todo/review
+- **Time sensitivity**: "urgent", "asap", "deadline" → likely todo
+- **Question format**: Direct questions → review or 2min
+- **Calendar keywords**: "meeting", "schedule", "invite" → meetings
+- **No action indicators**: Notifications, updates → fyi
+
+### **Quality Guidelines**
+- **Be consistent**: Similar emails should get similar action classifications
+- **Err toward action**: When unsure between fyi and todo, choose todo
+- **Respect Gmail**: Never duplicate system functionality with user labels
+- **Single action**: Each email gets exactly one action label
 """
     
     return StringKnowledgeSource(

@@ -1,9 +1,7 @@
 import os
 from datetime import datetime, timedelta
-from typing import List, Optional, ClassVar, Dict
+from typing import List, Optional, ClassVar
 import base64
-import email
-from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -14,7 +12,8 @@ from googleapiclient.errors import HttpError
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from ..models.briefing_models import EmailData, ToolStatus
+from ..models.briefing_models import ToolStatus
+from ..constants import ACTION_LABELS, GMAIL_SYSTEM_LABELS
 
 
 class GmailLabelingToolInput(BaseModel):
@@ -24,6 +23,7 @@ class GmailLabelingToolInput(BaseModel):
     max_results: int = Field(default=50, description="Maximum number of emails to process")
     skip_labeled: bool = Field(default=True, description="Skip emails that already have classification labels")
     dry_run: bool = Field(default=False, description="Preview mode - analyze emails but don't apply labels")
+    quiet: bool = Field(default=False, description="Minimize output - only show summary")
 
 
 class GmailLabelingTool(BaseTool):
@@ -38,17 +38,9 @@ class GmailLabelingTool(BaseTool):
         'https://www.googleapis.com/auth/gmail.modify'
     ]
     
-    # Classification labels that this tool manages (focus on actionability, not duplicating Gmail)
-    CLASSIFICATION_LABELS: ClassVar[List[str]] = [
-        'todo', '2min', 'fyi', 'review', 'news', 'promotions', 'forums', 'meetings'
-    ]
-    
-    # Gmail system labels that we respect and leverage (don't create user labels for these)
-    GMAIL_SYSTEM_LABELS: ClassVar[List[str]] = [
-        'CATEGORY_PROMOTIONS', 'CATEGORY_FORUMS', 'CATEGORY_UPDATES', 
-        'CATEGORY_SOCIAL', 'CATEGORY_PRIMARY', 'INBOX', 'IMPORTANT', 
-        'STARRED', 'SENT', 'DRAFT', 'SPAM', 'TRASH', 'UNREAD'
-    ]
+    # Use centralized label constants
+    ACTION_LABELS: ClassVar[List[str]] = ACTION_LABELS
+    GMAIL_SYSTEM_LABELS: ClassVar[List[str]] = GMAIL_SYSTEM_LABELS
     
     def __init__(self):
         super().__init__()
@@ -74,35 +66,41 @@ class GmailLabelingTool(BaseTool):
                 except Exception as scope_error:
                     # If there's a scope mismatch, we need to re-authenticate
                     if 'invalid_scope' in str(scope_error).lower():
-                        print("⚠️  Scope mismatch detected. Email labeling requires Gmail modify permissions.")
-                        print("   Backing up existing token and re-authenticating...")
+                        if not getattr(self, '_quiet_mode', False):
+                            print("⚠️  Scope mismatch detected. Email labeling requires Gmail modify permissions.")
+                            print("   Backing up existing token and re-authenticating...")
                         
                         # Backup the existing token
                         import shutil
                         backup_name = f"tokens/gmail_readonly_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                         shutil.copy(gmail_token_path, backup_name)
                         os.remove(gmail_token_path)
-                        print(f"   Existing token backed up to: {backup_name}")
+                        if not getattr(self, '_quiet_mode', False):
+                            print(f"   Existing token backed up to: {backup_name}")
                         
                         creds = None  # Force re-authentication
                     else:
                         raise scope_error
             elif os.path.exists(legacy_token_path):
-                print("⚠️  Found legacy token.json file. Migrating to gmail_api_token.json...")
+                if not getattr(self, '_quiet_mode', False):
+                    print("⚠️  Found legacy token.json file. Migrating to gmail_api_token.json...")
                 try:
                     creds = Credentials.from_authorized_user_file(legacy_token_path, self.GMAIL_SCOPES)
                     # If successful, migrate to new name
                     import shutil
                     shutil.move(legacy_token_path, gmail_token_path)
-                    print(f"   Token migrated from {legacy_token_path} to {gmail_token_path}")
+                    if not getattr(self, '_quiet_mode', False):
+                        print(f"   Token migrated from {legacy_token_path} to {gmail_token_path}")
                 except Exception as scope_error:
                     if 'invalid_scope' in str(scope_error).lower():
-                        print("   Legacy token has insufficient scope. Backing up and re-authenticating...")
+                        if not getattr(self, '_quiet_mode', False):
+                            print("   Legacy token has insufficient scope. Backing up and re-authenticating...")
                         backup_name = f"tokens/gmail_legacy_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                         import shutil
                         shutil.copy(legacy_token_path, backup_name)
                         os.remove(legacy_token_path)
-                        print(f"   Legacy token backed up to: {backup_name}")
+                        if not getattr(self, '_quiet_mode', False):
+                            print(f"   Legacy token backed up to: {backup_name}")
                         creds = None
                     else:
                         raise scope_error
@@ -120,7 +118,8 @@ class GmailLabelingTool(BaseTool):
                             raise refresh_error
                 
                 if not creds:
-                    print("🔐 Gmail labeling requires authentication with modify permissions...")
+                    if not getattr(self, '_quiet_mode', False):
+                        print("🔐 Gmail labeling requires authentication with modify permissions...")
                     flow = InstalledAppFlow.from_client_secrets_file(
                         'tokens/credentials.json', self.GMAIL_SCOPES)
                     creds = flow.run_local_server(port=0)
@@ -128,7 +127,8 @@ class GmailLabelingTool(BaseTool):
                 # Save the credentials for the next run with descriptive name
                 with open(gmail_token_path, 'w') as token:
                     token.write(creds.to_json())
-                print(f"   Gmail API token saved to: {gmail_token_path}")
+                if not getattr(self, '_quiet_mode', False):
+                    print(f"   Gmail API token saved to: {gmail_token_path}")
             
             self._service = build('gmail', 'v1', credentials=creds)
             self._status.available = True
@@ -147,7 +147,7 @@ class GmailLabelingTool(BaseTool):
             return False
     
     def _get_or_create_labels(self) -> bool:
-        """Get or create the classification labels in Gmail."""
+        """Get or create the action classification labels in Gmail."""
         try:
             # Get existing labels
             results = self._service.users().labels().list(userId='me').execute()
@@ -156,12 +156,12 @@ class GmailLabelingTool(BaseTool):
             # Build map of existing labels
             existing_labels = {label['name']: label['id'] for label in labels}
             
-            # Create missing classification labels
-            for label_name in self.CLASSIFICATION_LABELS:
+            # Create missing action classification labels (not Gmail system labels)
+            for label_name in self.ACTION_LABELS:
                 if label_name in existing_labels:
                     self._label_map[label_name] = existing_labels[label_name]
                 else:
-                    # Create the label
+                    # Create the action label
                     label_object = {
                         'name': label_name,
                         'labelListVisibility': 'labelShow',
@@ -178,7 +178,7 @@ class GmailLabelingTool(BaseTool):
             return True
             
         except Exception as e:
-            self._status.error_message = f"Failed to create labels: {str(e)}"
+            self._status.error_message = f"Failed to create action labels: {str(e)}"
             return False
     
     def _decode_message_body(self, message) -> str:
@@ -204,8 +204,8 @@ class GmailLabelingTool(BaseTool):
                 return header['value']
         return ""
     
-    def _has_classification_label(self, email_labels: List[str]) -> bool:
-        """Check if email already has a classification label."""
+    def _has_action_label(self, email_labels: List[str]) -> bool:
+        """Check if email already has an action classification label."""
         for label_id in email_labels:
             for label_name, mapped_id in self._label_map.items():
                 if label_id == mapped_id:
@@ -219,7 +219,7 @@ class GmailLabelingTool(BaseTool):
         Skip emails that:
         - Are in spam/trash
         - Are drafts or sent emails
-        - Already have our classification labels
+        - Already have our action classification labels
         """
         # Skip system folders that shouldn't be labeled
         skip_labels = ['SPAM', 'TRASH', 'DRAFT', 'SENT']
@@ -227,22 +227,22 @@ class GmailLabelingTool(BaseTool):
             if skip_label in email_labels:
                 return True
         
-        # Skip if already has our classification labels
-        return self._has_classification_label(email_labels)
+        # Skip if already has our action classification labels
+        return self._has_action_label(email_labels)
     
     def _apply_label(self, message_id: str, label_name: str) -> bool:
-        """Apply a classification label to an email."""
+        """Apply an action classification label to an email."""
         try:
             if label_name not in self._label_map:
                 return False
             
-            # Remove any existing classification labels first
+            # Remove any existing action labels first (but preserve Gmail system labels)
             remove_labels = []
-            for existing_label in self.CLASSIFICATION_LABELS:
-                if existing_label != label_name and existing_label in self._label_map:
-                    remove_labels.append(self._label_map[existing_label])
+            for existing_action_label in self.ACTION_LABELS:
+                if existing_action_label != label_name and existing_action_label in self._label_map:
+                    remove_labels.append(self._label_map[existing_action_label])
             
-            # Apply the new label and remove conflicting ones
+            # Apply the new action label and remove conflicting action labels only
             modify_request = {
                 'addLabelIds': [self._label_map[label_name]],
                 'removeLabelIds': remove_labels
@@ -257,10 +257,11 @@ class GmailLabelingTool(BaseTool):
             return True
             
         except Exception as e:
-            print(f"Error applying label {label_name} to message {message_id}: {e}")
+            if not getattr(self, '_quiet_mode', False):
+                print(f"Error applying action label {label_name} to message {message_id}: {e}")
             return False
     
-    def _run(self, days_back: int = 7, query: Optional[str] = None, max_results: int = 50, skip_labeled: bool = True, dry_run: bool = False) -> str:
+    def _run(self, days_back: int = 7, query: Optional[str] = None, max_results: int = 50, skip_labeled: bool = True, dry_run: bool = False, quiet: bool = False) -> str:
         """
         Process and label emails from Gmail.
         
@@ -270,10 +271,14 @@ class GmailLabelingTool(BaseTool):
             max_results: Maximum number of emails to process
             skip_labeled: Skip emails that already have classification labels
             dry_run: Preview mode - analyze emails but don't apply labels
+            quiet: Minimize output - only show summary
             
         Returns:
             String report containing labeling results and status information
         """
+        # Set quiet mode for suppressing verbose output
+        self._quiet_mode = quiet
+        
         if not self._authenticate():
             return f"GMAIL LABELING TOOL FAILURE: Authentication failed. Error: {self._status.error_message}"
         
@@ -286,10 +291,10 @@ class GmailLabelingTool(BaseTool):
             date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
             search_query = f"after:{date_filter}"
             
-            # Add label exclusion if skipping labeled emails
+            # Add action label exclusion if skipping labeled emails
             if skip_labeled:
-                label_exclusions = " ".join([f"-label:{label}" for label in self.CLASSIFICATION_LABELS])
-                search_query += f" {label_exclusions}"
+                action_label_exclusions = " ".join([f"-label:{label}" for label in self.ACTION_LABELS])
+                search_query += f" {action_label_exclusions}"
             
             if query:
                 search_query += f" {query}"
@@ -318,7 +323,8 @@ class GmailLabelingTool(BaseTool):
                 report += "No unlabeled emails found in the specified time period.\n"
                 return report
             
-            report += "EMAIL PROCESSING RESULTS:\n"
+            if not quiet:
+                report += "EMAIL PROCESSING RESULTS:\n"
             
             for msg in messages:
                 try:
@@ -350,19 +356,24 @@ class GmailLabelingTool(BaseTool):
                         if dry_run:
                             # Dry run mode - just report what would be done
                             labeled_count += 1
-                            report += f"  🔍 Email {processed_count}: {subject[:50]}... → Would label as '{classification}'\n"
+                            if not quiet:
+                                report += f"  🔍 Email {processed_count}: {subject[:50]}... → Would label as '{classification}'\n"
                         else:
                             # Actually apply the label
                             if self._apply_label(msg['id'], classification):
                                 labeled_count += 1
-                                report += f"  ✅ Email {processed_count}: {subject[:50]}... → {classification}\n"
+                                if not quiet:
+                                    report += f"  ✅ Email {processed_count}: {subject[:50]}... → {classification}\n"
                             else:
-                                report += f"  ❌ Email {processed_count}: {subject[:50]}... → Failed to apply label '{classification}'\n"
+                                if not quiet:
+                                    report += f"  ❌ Email {processed_count}: {subject[:50]}... → Failed to apply label '{classification}'\n"
                     else:
-                        report += f"  ❓ Email {processed_count}: {subject[:50]}... → Could not classify\n"
+                        if not quiet:
+                            report += f"  ❓ Email {processed_count}: {subject[:50]}... → Could not classify\n"
                     
                 except Exception as e:
-                    report += f"  ❌ Email {processed_count}: Error processing - {str(e)}\n"
+                    if not quiet:
+                        report += f"  ❌ Email {processed_count}: Error processing - {str(e)}\n"
                     continue
             
             report += f"\nSUMMARY:\n"
@@ -391,10 +402,10 @@ class GmailLabelingTool(BaseTool):
     
     def _classify_email(self, sender: str, subject: str, body: str, labels: List[str]) -> Optional[str]:
         """
-        Classify email based on Gmail system labels and content analysis.
+        Classify email based on required ACTION, not email type.
         
-        Uses Gmail's automatic categorization as primary signals, falling back to
-        content-based classification when needed.
+        Determines what action is needed with this email, using Gmail system labels
+        as context but focusing on actionability.
         
         Args:
             sender: Email sender
@@ -403,78 +414,78 @@ class GmailLabelingTool(BaseTool):
             labels: Current Gmail labels (including system categories)
             
         Returns:
-            Classification label name or None if unable to classify
+            Action classification label name or None if unable to classify
         """
-        # Phase 1: Check Gmail system categories first (highest priority)
-        gmail_category_mapping = {
-            'CATEGORY_PROMOTIONS': 'promotions',
-            'CATEGORY_FORUMS': 'forums',
-            'CATEGORY_UPDATES': 'fyi',
-            'CATEGORY_SOCIAL': 'fyi'
-        }
-        
-        for gmail_label, our_label in gmail_category_mapping.items():
-            if gmail_label in labels:
-                return our_label
-        
-        # Phase 2: Content-based classification for CATEGORY_PRIMARY or uncategorized emails
         subject_lower = subject.lower()
         sender_lower = sender.lower()
         body_lower = body.lower()
         
-        # Meeting-related emails (high priority)
-        meeting_keywords = ['meeting', 'invite', 'calendar', 'schedule', 'conference', 'zoom', 'teams']
+        # Phase 1: Meeting-related actions (highest priority)
+        meeting_keywords = ['meeting', 'invite', 'calendar', 'schedule', 'conference', 'zoom', 'teams', 'appointment']
         if any(word in subject_lower for word in meeting_keywords):
             return 'meetings'
         
-        # Action required emails (todo category)
-        todo_keywords = ['payment', 'bill', 'invoice', 'action required', 'please complete', 'due date']
-        todo_senders = ['school', 'physician', 'doctor', 'security', 'bank']
+        # Phase 2: Significant action required (todo)
+        todo_keywords = ['payment', 'bill', 'invoice', 'action required', 'please complete', 'due date', 
+                        'deadline', 'submit', 'approve', 'sign', 'register', 'application']
+        todo_senders = ['school', 'physician', 'doctor', 'security', 'bank', 'finance', 'billing']
+        
+        # Check for failure/error notifications that require action
+        failure_keywords = ['failed', 'declined', 'error', 'problem', 'issue', 'suspended', 'blocked']
+        
         if (any(word in subject_lower for word in todo_keywords) or 
-            any(sender in sender_lower for sender in todo_senders)):
+            any(sender in sender_lower for sender in todo_senders) or
+            any(word in subject_lower for word in failure_keywords)):
             return 'todo'
         
-        # Review/feedback requests  
-        review_keywords = ['review', 'feedback', 'please', 'opinion', 'thoughts', 'comment']
-        google_docs_indicators = ['docs.google.com', 'has shared', 'commented on']
+        # Phase 3: Review/feedback requests
+        review_keywords = ['review', 'feedback', 'opinion', 'thoughts', 'comment', 'please', 'input']
+        google_docs_indicators = ['docs.google.com', 'has shared', 'commented on', 'shared with you']
+        question_indicators = ['?', 'what do you think', 'can you', 'would you', 'could you']
+        
         if (any(word in subject_lower for word in review_keywords) or
-            any(indicator in body_lower for indicator in google_docs_indicators)):
+            any(indicator in body_lower for indicator in google_docs_indicators) or
+            any(indicator in subject_lower for indicator in question_indicators)):
             return 'review'
         
-        # News organizations
-        news_keywords = ['newsletter', 'breaking', 'news alert', 'press release']
-        news_domains = ['news', 'journalist', 'reporter', 'media']
-        if (any(word in subject_lower for word in news_keywords) or
-            any(domain in sender_lower for domain in news_domains)):
-            return 'news'
+        # Phase 4: Quick actions (2min)
+        quick_keywords = ['confirm', 'verify', 'click here', 'one-click', 'quick', 'rsvp', 'yes/no']
         
-        # Quick actions (2min category)
-        quick_keywords = ['confirm', 'verify', 'click here', 'one-click', 'quick']
         if any(word in subject_lower for word in quick_keywords):
-            # Check if it's actually a quick action vs a todo
-            if any(word in subject_lower for word in ['payment', 'billing', 'account']):
-                return 'todo'  # Financial actions are not 2min tasks
+            # Double-check it's not actually a complex action
+            if any(word in subject_lower for word in ['payment', 'billing', 'account', 'financial']):
+                return 'todo'  # Financial confirmations are not 2min tasks
             return '2min'
         
-        # Forums/mailing lists (if not caught by Gmail categories)
-        forum_indicators = ['unsubscribe', 'mailing list', 'discussion', 'group', 'forum']
-        if any(indicator in body_lower for indicator in forum_indicators):
-            return 'forums'
+        # Phase 5: Default to fyi for informational content
+        # Use Gmail system labels as context for default classification
         
-        # Automated notifications and updates (fyi category)
-        fyi_keywords = ['notification', 'alert', 'status', 'update', 'confirmation', 'receipt']
-        automated_senders = ['noreply', 'no-reply', 'donotreply', 'automated', 'system']
-        if (any(word in subject_lower for word in fyi_keywords) or
-            any(sender in sender_lower for sender in automated_senders)):
+        # CATEGORY_PROMOTIONS: Usually just informational
+        if 'CATEGORY_PROMOTIONS' in labels:
             return 'fyi'
         
-        # Default classification
-        # If Gmail marked it as CATEGORY_PRIMARY but we couldn't classify it, 
-        # it's likely informational
-        if 'CATEGORY_PRIMARY' in labels:
-            return 'fyi'  # Conservative default for primary emails
-        else:
-            return 'fyi'  # General default for uncategorized emails
+        # CATEGORY_FORUMS: Usually informational unless specific action needed
+        if 'CATEGORY_FORUMS' in labels:
+            return 'fyi'
+        
+        # CATEGORY_UPDATES: Usually informational but could be action if failure/error
+        if 'CATEGORY_UPDATES' in labels:
+            if any(word in subject_lower for word in failure_keywords):
+                return 'todo'
+            return 'fyi'
+        
+        # CATEGORY_SOCIAL: Usually just informational
+        if 'CATEGORY_SOCIAL' in labels:
+            return 'fyi'
+        
+        # CATEGORY_PRIMARY: Requires more analysis, but default to fyi if unclear
+        # Most automated notifications end up here
+        automated_senders = ['noreply', 'no-reply', 'donotreply', 'automated', 'system']
+        if any(sender in sender_lower for sender in automated_senders):
+            return 'fyi'
+        
+        # Default for everything else
+        return 'fyi'
     
     def get_status(self) -> ToolStatus:
         """Get current tool status."""
