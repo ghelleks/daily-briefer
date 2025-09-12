@@ -54,7 +54,10 @@ python daily_briefer.py
 
 2. Set up authentication tokens in the `tokens/` directory:
    - Place your Google service account credentials at `tokens/credentials.json`
-   - OAuth tokens will be automatically generated in `tokens/token.json`
+   - OAuth tokens will be automatically generated per service:
+     - `tokens/gmail_api_token.json` (Gmail access)
+     - `tokens/token_calendar.json` (Calendar access)
+     - `tokens/token_workspace.json` (Google Workspace access)
 
 3. The Todoist MCP server uses `npx -y todoist-mcp` (no separate installation needed)
 

@@ -20,9 +20,10 @@ def print_header():
 def check_existing_credentials():
     """Check if credentials already exist"""
     files_to_check = [
-        "credentials.json",
-        "oauth_credentials.json", 
-        "token.json"
+        "tokens/credentials.json",
+        "tokens/gmail_api_token.json",
+        "tokens/token_calendar.json",
+        "tokens/token_workspace.json"
     ]
     
     existing = []
@@ -84,16 +85,19 @@ Follow these steps to set up OAuth 2.0 credentials for Gmail and Calendar access
 
 5. 💾 DOWNLOAD CREDENTIALS
    → Click the download button (⬇️) next to your new OAuth client
-   → Save the file as 'credentials.json' in your project directory
+   → Save the file as 'credentials.json' in the tokens/ directory
 
 6. ✅ VERIFY SETUP
-   → Make sure you have 'credentials.json' in your project root
+   → Make sure you have 'tokens/credentials.json' in place
    → Run: uv run python daily_briefer.py
    → First run will open browser for OAuth consent
+   → Service-specific token files will be created automatically
 
 📝 CREDENTIAL FILES EXPLAINED:
    - credentials.json: OAuth 2.0 client configuration (download from Google)
-   - token.json: Access/refresh tokens (created automatically after first auth)
+   - tokens/gmail_api_token.json: Gmail access tokens (created automatically after first auth)
+   - tokens/token_calendar.json: Calendar access tokens (created automatically)
+   - tokens/token_workspace.json: Google Workspace access tokens (created automatically)
    - .env: API keys and configuration
 
 🔗 HELPFUL LINKS:
@@ -120,22 +124,25 @@ def create_test_credentials():
         }
     }
     
-    with open("credentials_template.json", "w") as f:
+    # Ensure tokens directory exists
+    os.makedirs("tokens", exist_ok=True)
+    
+    with open("tokens/credentials_template.json", "w") as f:
         json.dump(template, f, indent=2)
     
-    print("✅ Created credentials_template.json as reference")
-    return "credentials_template.json"
+    print("✅ Created tokens/credentials_template.json as reference")
+    return "tokens/credentials_template.json"
 
 
 def validate_credentials():
     """Validate existing credentials.json file"""
     
-    if not os.path.exists("credentials.json"):
-        print("❌ credentials.json not found")
+    if not os.path.exists("tokens/credentials.json"):
+        print("❌ tokens/credentials.json not found")
         return False
     
     try:
-        with open("credentials.json", "r") as f:
+        with open("tokens/credentials.json", "r") as f:
             creds = json.load(f)
         
         # Check for required fields
@@ -156,14 +163,14 @@ def validate_credentials():
             print("❌ Missing 'installed' section in credentials.json")
             return False
         
-        print("✅ credentials.json appears valid")
+        print("✅ tokens/credentials.json appears valid")
         return True
         
     except json.JSONDecodeError:
-        print("❌ credentials.json is not valid JSON")
+        print("❌ tokens/credentials.json is not valid JSON")
         return False
     except Exception as e:
-        print(f"❌ Error validating credentials.json: {e}")
+        print(f"❌ Error validating tokens/credentials.json: {e}")
         return False
 
 
@@ -191,7 +198,7 @@ def main():
     open_console()
     
     # Validate existing credentials if present
-    if "credentials.json" in existing:
+    if "tokens/credentials.json" in existing:
         print("\n" + "="*50)
         print("VALIDATING EXISTING CREDENTIALS")
         print("="*50)
@@ -203,12 +210,19 @@ def main():
     print()
     print("📋 Next steps:")
     print("1. Follow the instructions above to create OAuth credentials")
-    print("2. Download and save as 'credentials.json'")
+    print("2. Download and save as 'tokens/credentials.json'")
     print("3. Update GOOGLE_AI_API_KEY in .env file")
     print("4. Run: uv run python daily_briefer.py")
     print()
     print("📁 Files in project:")
-    for file in ["credentials.json", "credentials_template.json", "token.json", ".env"]:
+    token_files = [
+        "tokens/credentials.json",
+        "tokens/gmail_api_token.json", 
+        "tokens/token_calendar.json",
+        "tokens/token_workspace.json",
+        ".env"
+    ]
+    for file in token_files:
         status = "✅" if os.path.exists(file) else "❌"
         print(f"   {status} {file}")
 
