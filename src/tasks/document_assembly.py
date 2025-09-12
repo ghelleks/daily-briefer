@@ -29,7 +29,11 @@ def create_document_assembly_task(target_date: date, verbose: bool = True) -> Ta
            
            **Section 3: Daily Agenda**
            - **Chronological order**: Events ordered by start time
-           - **Rich context**: Include meeting purpose, attendees, and preparation needs
+           - **Smart formatting**: Avoid redundant sub-bullets for obvious details
+             * Personal events (birthdays): Simple title only unless additional context exists
+             * All-day events: Skip time details, focus on actions/preparation
+             * Routine meetings: Include context only if agenda/materials are available
+           - **Rich context**: Include meeting purpose, attendees, and preparation needs only when actionable
            - **Document links**: Direct links to relevant documents
            - **Open actions**: Action items from linked documents
            - **Virtual meeting links**: Properly hyperlinked meeting URLs
