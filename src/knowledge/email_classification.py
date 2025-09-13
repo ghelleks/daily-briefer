@@ -62,7 +62,7 @@ Marketing emails, deals, offers, sales announcements.
 - **Action needed**: Usually "fyi" but can be "todo" if requiring response
 
 ### **CATEGORY_UPDATES** 
-Notifications, confirmations, receipts, automated status updates.
+Notifications, confirmations, orders, receipts, automated status updates.
 - **Examples**: Payment confirmations, shipping notifications, deployment alerts
 - **Action needed**: Usually "fyi" but can be "todo" if action required
 
@@ -167,7 +167,7 @@ When an email could fit multiple action categories, use this priority order:
 
 ### **Content Analysis Guidelines**
 - **Read subject, sender, and content** for action indicators
-- **Action words**: "please", "required", "due", "review" → likely todo/review
+- **Action words**: "your order", "please", "required", "due", "review" → likely todo/review
 - **Time sensitivity**: "urgent", "asap", "deadline" → likely todo
 - **Question format**: Direct questions → review or 2min
 - **Calendar keywords**: "meeting", "schedule", "invite" → meetings
