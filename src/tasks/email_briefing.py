@@ -34,8 +34,9 @@ def create_email_briefing_task(target_date: date, verbose: bool = True) -> Task:
         {sections_text}
         
         **Section Guidelines:**
-        - Present each item as an engaging narrative
-        - **Bold** key deadlines, amounts, and action items  
+        - Present each item as an engaging narrative in flowing prose paragraphs
+        - **NO BULLETS OR LISTS** - Write complete sentences that flow together naturally
+        - **Bold** key deadlines, amounts, and action items
         - Link to [original emails](gmail-url) and any mentioned documents/websites
         - Add context about why these items matter
         - Use email type context to add flavor when relevant
