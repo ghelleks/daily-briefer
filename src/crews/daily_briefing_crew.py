@@ -15,7 +15,7 @@ from ..knowledge import create_email_classification_knowledge
 class DailyBrieferCrew:
     """Main crew configuration for the Daily Briefer system."""
     
-    def __init__(self, target_date: date, verbose: bool = True):
+    def __init__(self, target_date: date, verbose: bool = False):
         """
         Initialize the Daily Briefer Crew.
 
@@ -134,7 +134,7 @@ class DailyBrieferCrew:
         }
 
 
-def create_daily_briefer_crew(target_date: date, verbose: bool = True) -> DailyBrieferCrew:
+def create_daily_briefer_crew(target_date: date, verbose: bool = False) -> DailyBrieferCrew:
     """
     Factory function to create a Daily Briefer Crew.
 

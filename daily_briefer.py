@@ -1,6 +1,8 @@
 import os
 import sys
 import argparse
+import logging
+import warnings
 from datetime import date, datetime
 from dotenv import load_dotenv
 
@@ -80,9 +82,24 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     
-    # Configure CrewAI telemetry based on quiet mode
-    if args.quiet:
+    # Configure CrewAI telemetry - disable by default, enable only with --verbose
+    if not args.verbose:
         os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
+    
+    # Configure logging levels and output suppression based on verbosity
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs
+        os.environ['MCP_LOG_LEVEL'] = 'ERROR'
+    else:
+        # Default: suppress debug logs and warnings
+        logging.basicConfig(level=logging.WARNING)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs by default
+        os.environ['MCP_LOG_LEVEL'] = 'WARNING'
     
     # Load environment variables
     load_dotenv()
@@ -119,7 +136,7 @@ def main():
         if args.verbose and not args.quiet:
             print("🔧 Setting up AI crew...")
         
-        crew = create_daily_briefer_crew(target_date, verbose=not args.quiet)
+        crew = create_daily_briefer_crew(target_date, verbose=args.verbose)
         
         # Display crew information
         if args.verbose and not args.quiet:
