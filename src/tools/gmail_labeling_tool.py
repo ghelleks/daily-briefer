@@ -287,9 +287,9 @@ class GmailLabelingTool(BaseTool):
             return f"GMAIL LABELING TOOL FAILURE: Label setup failed. Error: {self._status.error_message}"
         
         try:
-            # Build search query for unlabeled emails
+            # Build search query for unlabeled emails in inbox only
             date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
-            search_query = f"after:{date_filter}"
+            search_query = f"in:inbox after:{date_filter}"
             
             # Add action label exclusion if skipping labeled emails
             if skip_labeled:
@@ -338,7 +338,12 @@ class GmailLabelingTool(BaseTool):
                     
                     headers = message['payload'].get('headers', [])
                     email_labels = message.get('labelIds', [])
-                    
+
+                    # Double-check that email is in INBOX and not in TRASH
+                    if 'TRASH' in email_labels or 'INBOX' not in email_labels:
+                        skipped_count += 1
+                        continue
+
                     # Skip if already labeled, in system folders, or should be skipped
                     if skip_labeled and self._should_skip_labeling(email_labels):
                         skipped_count += 1

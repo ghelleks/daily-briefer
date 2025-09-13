@@ -4,7 +4,7 @@ from datetime import date
 from ..agents.email_labeling_agent import create_email_labeling_agent
 
 
-def create_email_labeling_task(days_back: int = 7, max_emails: int = 50, verbose: bool = True) -> Task:
+def create_email_labeling_task(days_back: int = 14, max_emails: int = 50, verbose: bool = True) -> Task:
     """Create a task for labeling unlabeled emails in Gmail."""
     
     return Task(
@@ -18,8 +18,9 @@ def create_email_labeling_task(days_back: int = 7, max_emails: int = 50, verbose
 
         Your task is to:
 
-        1. **Retrieve Unlabeled Emails**: 
-           - Access Gmail and retrieve emails from the last {days_back} days
+        1. **Retrieve Unlabeled Emails**:
+           - Access Gmail and retrieve emails from the INBOX only for the last {days_back} days
+           - **CRITICAL**: Only process emails that are currently in the INBOX - ignore archived, sent, draft, or trashed emails
            - Focus on emails that don't have ACTION classification labels (todo, 2min, fyi, review, meetings)
            - **RESPECT** existing Gmail system labels (CATEGORY_PROMOTIONS, CATEGORY_FORUMS, etc.)
            - Process up to {max_emails} emails in this batch
