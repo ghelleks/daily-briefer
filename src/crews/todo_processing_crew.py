@@ -15,7 +15,7 @@ class TodoProcessingCrew:
         days_back: int = 7, 
         max_emails: int = 20, 
         dry_run: bool = False,
-        verbose: bool = True
+        verbose: bool = False
     ):
         """
         Initialize the Todo Processing Crew.
@@ -227,7 +227,7 @@ def create_todo_processing_crew(
     days_back: int = 7, 
     max_emails: int = 20, 
     dry_run: bool = False,
-    verbose: bool = True
+    verbose: bool = False
 ) -> TodoProcessingCrew:
     """
     Factory function to create a Todo Processing Crew.

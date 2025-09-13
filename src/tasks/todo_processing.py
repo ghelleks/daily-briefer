@@ -10,7 +10,7 @@ def create_todo_processing_task(
     days_back: int = 7,
     max_emails: int = 20,
     dry_run: bool = False,
-    verbose: bool = True
+    verbose: bool = False
 ) -> Task:
     """
     Create a task for processing todo emails by forwarding them to Todoist and archiving them.
@@ -119,7 +119,7 @@ def create_batch_todo_processing_task(
     emails_per_batch: int = 10,
     days_back: int = 7,
     dry_run: bool = False,
-    verbose: bool = True
+    verbose: bool = False
 ) -> Task:
     """
     Create a task for batch processing of todo emails with multiple iterations.

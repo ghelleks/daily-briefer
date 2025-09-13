@@ -18,6 +18,8 @@ Examples:
 import os
 import sys
 import argparse
+import logging
+import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -103,9 +105,24 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     
-    # Configure CrewAI telemetry based on quiet mode
-    if args.quiet:
+    # Configure CrewAI telemetry - disable by default, enable only with --verbose
+    if not args.verbose:
         os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
+    
+    # Configure logging levels and output suppression based on verbosity
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs
+        os.environ['MCP_LOG_LEVEL'] = 'ERROR'
+    else:
+        # Default: suppress debug logs and warnings
+        logging.basicConfig(level=logging.WARNING)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs by default
+        os.environ['MCP_LOG_LEVEL'] = 'WARNING'
     
     # Load environment variables
     load_dotenv()
@@ -138,7 +155,7 @@ def main():
         crew = create_email_labeling_crew(
             days_back=args.days,
             max_emails=args.max_emails,
-            verbose=not args.quiet
+            verbose=args.verbose
         )
         
         if args.verbose and not args.quiet:

@@ -9,6 +9,8 @@ allowing it to be run independently or integrated into larger workflows.
 import os
 import sys
 import argparse
+import logging
+import warnings
 from dotenv import load_dotenv
 
 from src.crews.todo_processing_crew import create_todo_processing_crew
@@ -100,9 +102,24 @@ def main():
     # Parse command line arguments
     args = parse_arguments()
     
-    # Configure CrewAI telemetry based on quiet mode
-    if args.quiet:
+    # Configure CrewAI telemetry - disable by default, enable only with --verbose
+    if not args.verbose:
         os.environ['CREWAI_DISABLE_TELEMETRY'] = 'true'
+    
+    # Configure logging levels and output suppression based on verbosity
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+    elif args.quiet:
+        logging.basicConfig(level=logging.ERROR)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs
+        os.environ['MCP_LOG_LEVEL'] = 'ERROR'
+    else:
+        # Default: suppress debug logs and warnings
+        logging.basicConfig(level=logging.WARNING)
+        warnings.filterwarnings('ignore')
+        # Suppress MCP debug logs by default
+        os.environ['MCP_LOG_LEVEL'] = 'WARNING'
     
     # Load environment variables
     load_dotenv()
@@ -141,7 +158,7 @@ def main():
             days_back=args.days_back,
             max_emails=args.max_emails,
             dry_run=args.dry_run,
-            verbose=not args.quiet
+            verbose=args.verbose
         )
         
         # Display crew information

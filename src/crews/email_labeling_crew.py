@@ -10,7 +10,7 @@ from ..knowledge import create_email_classification_knowledge
 class EmailLabelingCrew:
     """Email labeling crew for automated Gmail email classification and labeling."""
     
-    def __init__(self, days_back: int = 7, max_emails: int = 50, verbose: bool = True):
+    def __init__(self, days_back: int = 7, max_emails: int = 50, verbose: bool = False):
         """
         Initialize the Email Labeling Crew.
         
@@ -114,7 +114,7 @@ class EmailLabelingCrew:
         }
 
 
-def create_email_labeling_crew(days_back: int = 7, max_emails: int = 50, verbose: bool = True) -> EmailLabelingCrew:
+def create_email_labeling_crew(days_back: int = 7, max_emails: int = 50, verbose: bool = False) -> EmailLabelingCrew:
     """
     Factory function to create an Email Labeling Crew.
     

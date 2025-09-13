@@ -93,3 +93,4 @@ The system is designed to integrate with:
 - we use uv to manage this project and its dependencies
 - always use uv to run this tool
 - Always follow CrewAI best practices. When you identify patterns or behavior that deviate from those best practices, you seek guidance from the user.
+- by default, use Gemini as the model. use flash models for low complexity tasks that require speed. use pro models for more complex work that requires reasoning. when in doubt, use flash models.

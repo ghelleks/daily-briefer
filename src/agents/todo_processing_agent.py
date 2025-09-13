@@ -5,7 +5,7 @@ from typing import Optional
 from ..tools.gmail_todo_processing_tool import GmailTodoProcessingTool
 
 
-def create_todo_processing_agent(verbose: bool = True) -> Agent:
+def create_todo_processing_agent(verbose: bool = False) -> Agent:
     """
     Create an agent specialized in processing todo emails by forwarding them to Todoist and archiving them.
     
@@ -49,6 +49,8 @@ def create_todo_processing_agent(verbose: bool = True) -> Agent:
         
         tools=[gmail_todo_tool],
         
+        llm="gemini/gemini-2.0-flash-lite",  # Use Gemini Flash for speed and efficiency
+        
         verbose=verbose,
         
         # Agent configuration for optimal performance
@@ -67,7 +69,7 @@ def create_todo_processing_agent(verbose: bool = True) -> Agent:
 
 
 def create_todo_processing_agent_with_config(
-    verbose: bool = True,
+    verbose: bool = False,
     todoist_email: Optional[str] = None,
     days_back: int = 7,
     max_emails: int = 20,
