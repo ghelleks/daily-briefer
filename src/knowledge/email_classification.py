@@ -111,7 +111,8 @@ Apply these rules to determine what ACTION is needed:
 2. **Quick confirmations, simple replies** → **2min**
 3. **Document review requests, feedback requests** → **review**
 4. **Calendar invites, meeting logistics** → **meetings**
-5. **Informational content, no action needed** → **fyi**
+5. **Informational content, should be archived,no action needed** → **fyi**
+6. **No action needed, no need to retain** → no label
 
 ### **Action Classification Priority**
 When an email could fit multiple action categories, use this priority order:
@@ -167,17 +168,18 @@ When an email could fit multiple action categories, use this priority order:
 
 ### **Content Analysis Guidelines**
 - **Read subject, sender, and content** for action indicators
-- **Action words**: "your order", "please", "required", "due", "review" → likely todo/review
+- **Action words**: "your order", "make sure", "please", "required", "due", "review" → likely todo/review
 - **Time sensitivity**: "urgent", "asap", "deadline" → likely todo
+- **Confirmations**: "thank you for your order", "receipt", "we processed", "thank you for" → likely review
 - **Question format**: Direct questions → review or 2min
 - **Calendar keywords**: "meeting", "schedule", "invite" → meetings
-- **No action indicators**: Notifications, updates → fyi
+- **No action indicators**: → no labels, will be periodically deleted
 
 ### **Quality Guidelines**
 - **Be consistent**: Similar emails should get similar action classifications
 - **Err toward action**: When unsure between fyi and todo, choose todo
 - **Respect Gmail**: Never duplicate system functionality with user labels
-- **Single action**: Each email gets exactly one action label
+- **Single action**: Each email gets exactly one action label or no label at all, indicating it can be deleted)
 """
     
     return StringKnowledgeSource(
